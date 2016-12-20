@@ -1,0 +1,21 @@
+#range-slider {
+	
+}
+
+#main-map {
+	height: 500px;
+}
+
+#graphs {
+	right: 400px;
+}
+
+#left-graph {
+	right: 400px;
+	border: 1px;
+}
+
+#right-graph {
+	right: 800px;
+	border: 1px;
+}
