@@ -88,7 +88,7 @@
             function setPlant(e,row){
                 currentPlant=row;
                 dates=[];
-                d3.csv("generacion_porhora_"+currentPlant.id+'.csv', function(err, rows){    
+                d3.csv("generacion_porhora_"+currentPlant.id+'.csv', function(err, rows){
                     rows.map(function(row) {
                         var date=row.Day+"-"+row.Month+"-"+row.Year;
                         if (dates.length===0 || date!=dates[dates.length-1]){
@@ -270,7 +270,7 @@
                             var val=sumValues[i-l]/countValues[i-l];
                             means.push(val);
                         }
-                        console.log(means);
+                        //console.log(means);
                         data.push({
                             x: range,
                             y: means,

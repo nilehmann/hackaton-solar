@@ -71,8 +71,8 @@ function bar2(data, start_d_m_y, end_d_m_y, div) {
 
 function baz(start_d_m_y, end_d_m_y) {
 	const id = currentPlant.id;
-	Plotly.d3.csv(`generacion_por_dia\\generacion_pordia_${id}.csv`, function(rows) {
-		// Plotly.d3.csv(`bajas\\bajas_${id}.csv`, function(bajas) {
+	Plotly.d3.csv(`generacion_por_dia/generacion_pordia_${id}.csv`, function(rows) {
+		// Plotly.d3.csv(`bajas/bajas_${id}.csv`, function(bajas) {
         // print(rows, bajas)
 			bar(rows, start_d_m_y, end_d_m_y, $('#result')[0]);
 			// bar2(bajas, start_d_m_y, end_d_m_y, $('#result')[0]);
