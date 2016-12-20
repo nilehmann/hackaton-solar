@@ -18,7 +18,6 @@ function scatter(xs, ys, div) {
 }
 
 function chileDate(str, sep) {
-	console.log(str);
 	const split = str.split(sep);
 	const swapped = `${split[1]}/${split[0]}/${split[2]}`;
 	return new Date(swapped);
@@ -64,8 +63,6 @@ function bar2(data, start_d_m_y, end_d_m_y, div) {
 
 	const sortedByDate = _.sortBy(datesFiltered, d => d.date.getTime());
 
-	console.log(data);
-
 	const dates = _.pluck(sortedByDate, 'date');
 	//const gens = new Array(dates.length).fill(0);
 	const gens = _.pluck(sortedByDate, 'baja');
@@ -75,19 +72,20 @@ function bar2(data, start_d_m_y, end_d_m_y, div) {
 function baz(start_d_m_y, end_d_m_y) {
 	const id = currentPlant.id;
 	Plotly.d3.csv(`generacion_por_dia\\generacion_pordia_${id}.csv`, function(rows) {
-		Plotly.d3.csv(`bajas\\bajas_${id}.csv`, function(bajas) {
-			bar(rows, start_d_m_y, end_d_m_y, $('#day-graph')[0]);
-			bar2(bajas, start_d_m_y, end_d_m_y, $('#day-graph')[0]);
+		// Plotly.d3.csv(`bajas\\bajas_${id}.csv`, function(bajas) {
+        // print(rows, bajas)
+			bar(rows, start_d_m_y, end_d_m_y, $('#result')[0]);
+			// bar2(bajas, start_d_m_y, end_d_m_y, $('#result')[0]);
 /*
 			$('#result')[0].on('plotly_hover', function(data) {
 				const deAbajo = ._filter(data, d => d.curveNumber()
 			});*/
-		});
+		// });
 	});
 }
 
 $(function() {
-	currentPlant = {id: 8};
+	// currentPlant = {id: 8};
 	//baz('01-01-90', '31-12-16');
-	baz('01-05-16', '30-05-16');
+	// baz('01-05-16', '30-05-16');
 });

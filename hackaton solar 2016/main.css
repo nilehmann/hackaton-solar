@@ -1,0 +1,38 @@
+:root {
+	--mainHeight: 600px;
+	--height: 400px;
+	--second: 400px;
+	--third: 800px;
+}
+#main-graph {
+	position:absolute;
+	top: 0%;
+	left: 0%;
+	width: 30%;
+	height: var(--mainHeight);
+	border:1px solid black;
+}
+#hour-graph {
+	position:absolute;
+	top: 0%;
+	left: 30%;
+	width: 35%;
+	height: var(--height);
+	border:1px solid black;
+}
+#day-graph {
+	position:absolute;
+	top: 0%;
+	right: 0%;
+	width: 35%;
+	height: var(--height);
+	border:1px solid black;
+}
+#range-options {
+	position:absolute;
+	top: var(--second);
+	right: 0%;
+	width: 70%;
+	height: var(--height);
+	border:1px solid black;
+}

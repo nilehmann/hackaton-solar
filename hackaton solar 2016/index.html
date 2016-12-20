@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script src="https://d3js.org/d3.v3.min.js"></script>
+        <link rel="stylesheet" href="main.css" />
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore.js" integrity="sha256-SzKOQsVYGX1bmddyfPzGC6yXY/rWYGUSMOi6+T9gZ+0=" crossorigin="anonymous"></script>
+        <script src="foo.js"></script>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <title>Maps</title>
+    </head>
+    <body>
+        <div id="main-graph"></div>
+        <div id="hour-graph"></div>
+        <div id="day-graph"></div>
+        <div id="range-options">
+            <center><input type="text" id="day-value" readonly style="border:0"></center>
+            <div id="day-range"></div>
+        </div>
+        <script>
+            function unpack(rows, key) {
+                return rows.map(function(row) { return row[key];});
+            }
+            var southWest = L.latLng(-90, -180);
+            var northEast = L.latLng(90, 180);
+            var bounds = L.latLngBounds(southWest, northEast);
+            var myMap = L.map('main-graph', {
+               center:[-33.606849999999994,-70.73545],
+               zoom: 4,
+               maxZoom: 9,
+               maxBounds: bounds,
+               layers: [],
+               crs: L.CRS.EPSG3857
+             });
+            var selectorOptions = {
+                buttons: [{
+                    step: 'day',
+                    stepmode: 'backward',
+                    count: 7,
+                    label: '1w'
+                }, {
+                    step: 'month',
+                    stepmode: 'backward',
+                    count: 1,
+                    label: '1m'
+                }, {
+                    step: 'month',
+                    stepmode: 'backward',
+                    count: 6,
+                    label: '6m'
+                }, {
+                    step: 'year',
+                    stepmode: 'backward',
+                    count: 1,
+                    label: '1y'
+                }, {
+                    step: 'all',
+                }],
+            };
+            var tileLayer = L.tileLayer(
+                'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    attribution: '(c) <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (c) <a href="http://cartodb.com/attributions">CartoDB</a>, CartoDB <a href ="http://cartodb.com/attributions">attributions</a>',
+                    detectRetina: false
+                    }
+                ).addTo(myMap);
+            d3.csv('centrales-solares.csv', function(err, rows){
+                var rowsFiltered = rows.filter(function(row) {
+                    var marker = L.marker([parseFloat(row.Latitude), parseFloat(row.Longitude)]).addTo(myMap);
+                    marker.bindPopup("CENTRAL "+row.Nombre+"<br>"+row.Región+"<br>COMUNA:"+row.Comuna).openPopup();
+                    marker.on('click', function (e) {
+                        return setPlant(e,row)
+                    });
+                    return true;
+                });
+            });
+            var currentPlant;
+            var currentMinDay;
+            var currentMaxDay;
+            var dates;
+            function setPlant(e,row){
+                currentPlant=row;
+                dates=[];
+                d3.csv("generacion_porhora_"+currentPlant.id+'.csv', function(err, rows){    
+                    rows.map(function(row) {
+                        var date=row.Day+"-"+row.Month+"-"+row.Year;
+                        if (dates.length===0 || date!=dates[dates.length-1]){
+                            dates.push(date);
+                        }
+                    });
+                    currentMinDay=dates[0];
+                    currentMaxDay=dates[dates.length-1];
+                    $(function() {
+                        $("#day-range").slider({
+                            range: true,
+                            min: 0,
+                            max: dates.length-1,
+                            values: [0,dates.length-1],
+                            slide: function( event, ui ) {
+                                $("#day-value").val( dates[ui.values[0]]+" - "+dates[ui.values[1]]);
+                            },
+                            stop: function( event, ui ) {
+                                currentMinDay=dates[ui.values[0]];
+                                currentMaxDay=dates[ui.values[1]];
+                                plot();
+                            }
+                        });
+                        $( "#day-value" ).val(dates[$( "#day-range" ).slider( "values", 0 )] + " - " + dates[$( "#day-range" ).slider( "values", 1 )]);
+                    });
+                    plot();
+                });
+            }
+            function plot(){
+                //baz(currentMinDay, currentMaxDay);
+                var name=currentPlant.Nombre;
+                name=name.split(" ");
+                for (var i = 0; i < name.length; i++) {
+                    if (!name[i].includes("-"))
+                        name[i]=name[i].substring(0,1).toUpperCase()+name[i].substring(1,name[i].length).toLowerCase();
+                    else
+                        name[i]=name[i].toUpperCase();
+                }
+                name=name.join(" ");
+                
+                /*d3.csv(''+currentPlant.id+'.csv', function(err, rows){    
+                    var data = [
+                      {
+                        x: unpack(rows,'date').map(function(row) {row=row.split("/");var aux=row[0];row[0]=row[2];row[2]=aux;return row.join("-")}),
+                        y: unpack(rows,'energy'),
+                        type: 'scatter'
+                      }
+                    ];
+                    var layout = {
+                        title: 'Data in Central '+name,
+                        xaxis: {
+                            rangeselector: selectorOptions,
+                            rangeslider: {}
+                        },
+                        yaxis: {
+                            fixedrange: true
+                        }
+                    };
+                    Plotly.newPlot('day-graph', data, layout);
+                });*/
+                d3.csv("rad_horaria_"+currentPlant.id+'.csv', function(err, rows){
+                    var l=1;
+                    var r=24;
+                    var sumValues=new Array(r-l+1);
+                    sumValues.fill(0);
+                    var countValues=new Array(r-l+1);
+                    countValues.fill(0);
+                    rows.map(function(row) {
+                        var date1=row.day+"-"+row.month+'-2014';
+                        var date2=row.day+"-"+row.month+'-2015';
+                        var date3=row.day+"-"+row.month+'-2016';
+                        if (myDateCompare(date1,currentMinDay)>=0 && myDateCompare(date1,currentMaxDay)<=0){
+                            var index=parseInt(row.hour)-l;
+                            countValues[index]++;
+                            sumValues[index]+=parseFloat(row.dir);
+                        }
+                        if (myDateCompare(date2,currentMinDay)>=0 && myDateCompare(date2,currentMaxDay)<=0){
+                            var index=parseInt(row.hour)-l;
+                            countValues[index]++;
+                            sumValues[index]+=parseFloat(row.dir);
+                        }
+                        if (myDateCompare(date3,currentMinDay)>=0 && myDateCompare(date3,currentMaxDay)<=0){
+                            var index=parseInt(row.hour)-l;
+                            countValues[index]++;
+                            sumValues[index]+=parseFloat(row.dir);
+                        }
+                    });
+                    var means=[];
+                    var range=[];
+                    var f1=[];
+                    var f2=[];
+                    var y1=[];
+                    var y2=[];
+                    currentPlant.pend1=parseFloat(currentPlant.pend1);
+                    currentPlant.pend2=parseFloat(currentPlant.pend2);
+                    currentPlant.n1=parseFloat(currentPlant.n1);
+                    currentPlant.n2=parseFloat(currentPlant.n2);
+                    for (var i = l; i <= r; i++) {
+                        var val=sumValues[i-l]/countValues[i-l]/10;
+                        range.push(i);
+                        means.push(val);
+                        //f1.push(val*currentPlant.pend1+currentPlant.n1)
+                        //f2.push(val*currentPlant.pend2+currentPlant.n2)
+                        if (val!=0){
+                            f1.push(val*currentPlant.pend1+currentPlant.n1);
+                            f2.push(val*currentPlant.pend2+currentPlant.n2);
+                        }
+                        else{
+                            f1.push(0);
+                            f2.push(0);
+                        }
+                        y1.push(Math.max(f1[i-l],f2[i-l]));
+                        y2.push(Math.min(f1[i-l],f2[i-l]));
+
+                    }
+                    for (var i = 0; i < r-l; i++) {
+                        if (y1[i]===0 && y1[i+1]!=0){
+                            y1[i]=y1[i+1]/2;
+                        }
+                        if (y1[i]!=0 && y1[i+1]===0){
+                            y1[i+1]=y1[i]/2;
+                        }
+                        if (y2[i]===0 && y2[i+1]!=0){
+                            y2[i]=y2[i+1]/2;
+                        }
+                        if (y2[i]!=0 && y2[i+1]===0){
+                            y2[i+1]=y2[i]/2;
+                        }
+                    }
+                    /*console.log("pend1");
+                    console.log(currentPlant.pend1);
+                    console.log("pend2");
+                    console.log(currentPlant.pend2);
+                    console.log("val2");
+                    console.log(currentPlant.var2);
+                    console.log("means");
+                    console.log(means);
+                    console.log("y1");
+                    console.log(y1);
+                    console.log("y2");
+                    console.log(y2);*/
+                    var layout = {
+                        title: 'Producción en Planta '+name,
+                        yaxis: {
+                            title: 'MWh'
+                        }
+                    };
+                    var data=[];
+                    data.push({
+                        x: range,
+                        y: y1,
+                        type: 'scatter',
+                        name: 'Ideal',
+                      });
+                    data.push({
+                        x: range,
+                        y: y2,
+                        type: 'scatter',
+                        name: 'Promedio',
+                      }
+                    );
+                    d3.csv('generacion_porhora_'+currentPlant.id+'.csv', function(err, rows){    
+                        var l=1;
+                        var r=24;
+                        var sumValues=new Array(r-l+1);
+                        sumValues.fill(0);
+                        var countValues=new Array(r-l+1);
+                        countValues.fill(0);
+                        rows.map(function(row) {
+                            var date=row.Day+"-"+row.Month+"-"+row.Year;
+                            if (myDateCompare(date,currentMinDay)>=0 && myDateCompare(date,currentMaxDay)<=0){
+                                var index=parseInt(row.Hour)-l;
+                                countValues[index]++;
+                                sumValues[index]+=parseFloat(row.Generacion_MWh);
+                            }
+                        });
+                        var means=[];
+                        for (var i = l; i <= r; i++) {
+                            var val=sumValues[i-l]/countValues[i-l];
+                            means.push(val);
+                        }
+                        console.log(means);
+                        data.push({
+                            x: range,
+                            y: means,
+                            type: 'scatter',
+                            name: 'Producción real'
+                          }
+                        );
+                        Plotly.newPlot('hour-graph', data, layout);
+                    });
+                });
+            }
+            
+            function myDateCompare(s1,s2){
+                var d1=s1.split("-");
+                var d2=s2.split("-");
+                d1[0]=parseInt(d1[0]);
+                d1[1]=parseInt(d1[1]);
+                d2[0]=parseInt(d2[0]);
+                d2[1]=parseInt(d2[1]);
+                var ans=0;
+                if (d1.length===3){
+                    d1[2]=parseInt(d1[2]);
+                    d2[2]=parseInt(d2[2]);
+                    if (d1[2]<d2[2]) return -1;
+                    else if (d1[2]>d2[2]) return 1;
+                }
+                if (d1[1]<d2[1]) ans=-1;
+                else if (d1[1]>d2[1]) ans=1;
+                if (ans===0){
+                    if (d1[0]<d2[0]) ans=-1;
+                    else if (d1[0]>d2[0]) ans=1;
+                }
+                return ans;
+            }
+        </script>
+    </body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script src="https://d3js.org/d3.v3.min.js"></script>
+        <link rel="stylesheet" href="main.css" />
+        <title>Maps</title>
+    </head>
+    <body>
+        <div id="main-map"></div>
+        <script>
+            var southWest = L.latLng(-90, -180);
+            var northEast = L.latLng(90, 180);
+            var bounds = L.latLngBounds(southWest, northEast);
+            var myMap = L.map('main-map', {
+               center:[-33.606849999999994,-70.73545],
+               zoom: 4,
+               maxZoom: 9,
+               maxBounds: bounds,
+               layers: [],
+               crs: L.CRS.EPSG3857
+             });
+            var tileLayer = L.tileLayer(
+                'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    attribution: '(c) <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (c) <a href="http://cartodb.com/attributions">CartoDB</a>, CartoDB <a href ="http://cartodb.com/attributions">attributions</a>',
+                    detectRetina: false
+                    }
+                ).addTo(myMap);
+            Plotly.d3.csv('file:centrales-solares.csv', function(err, rows){
+                function unpack(rows, key) {
+                    return rows.map(function(row) { return row[key]; });
+                }
+                var rowsFiltered = rows.filter(function(row) {
+                    console.log(row);
+                    var marker = L.marker([parseFloat(row.Latitude), parseFloat(row.Longitude)]).addTo(myMap);
+                    marker.bindPopup("CENTRAL "+row.Nombre+"<br>"+row.Región+"<br>COMUNA:"+row.Comuna).openPopup();
+                    return true;
+                });
+            });
+        </script>
+    </body>
+</html>
