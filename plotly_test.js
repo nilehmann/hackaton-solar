@@ -93,24 +93,22 @@ function test5() {
 // recibe [(radiación, fecha, hora)], (fechaInicio, fechaFin)
 // grafica para cada hora el promedio de las radiaciones a esa hora en el rango de fechas
 
-function timestamp(chileDate) {
-	if (!/\//.test(chileDate))
-		return new Date(chileDate).getTime();
-
-	const split = chileDate.split('/');
+function chileDate(str) {
+	const split = str.split('/');
 	const swapped = `${split[1]}/${split[0]}/${split[2]}`;
-	return new Date(swapped).getTime();
+	return new Date(swapped);
 }
 
 function date_in_range(date, startDate, endDate) {
-	return timestamp(startDate) <= timestamp(date) &&
-			timestamp(date) <= timestamp(endDate);
+	return startDate.getTime() <= date.getTime() &&
+			date.getTime() <= endDate.getTime();
 }
 
 function left_graph(data, startDate, endDate, div) {
 	const hours = _.unique(_.pluck(data, 'hour'));
 
-	const datesFiltered = _.filter(data, d => date_in_range(d.date, startDate, endDate));
+	const datesFiltered = _.filter(data, d =>
+		date_in_range(chileDate(d.date), startDate, endDate));
 
 	const radiations = hour => {
 		const hourFiltered = _.filter(datesFiltered, d => d.hour == hour);
@@ -126,23 +124,34 @@ function left_graph(data, startDate, endDate, div) {
 		margin: {t: 0}
 	};
 
-	Plotly.plot(div, [trace], layout);
+	Plotly.newPlot(div, [trace], layout);
 }
-/*
+
+function date_to_string(date) {
+	return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
+}
+
 $(function() {
 	noUiSlider.create($('#range-slider')[0], {
 		range: {
-			min: timestamp('1990'),
-			max: timestamp('2016')
+			min: new Date('1990').getTime(),
+			max: new Date('2017').getTime()
 		},
 
-		start: [timestamp('2011'), timestamp('2015')]
+		step: 24*60*60*1000,
+
+		start: [new Date('2011').getTime(), new Date('2015').getTime()]
 	});
 
-	dateSlider.noUiSlider.on('update', function(values, handle) {
-		$
-	})
-});*/
+	$('#range-slider')[0].noUiSlider.on('set', function(values, handle) {
+		console.log(_.map(values, timestamp => date_to_string(new Date(+timestamp))));
+
+		const startDate = new Date(+values[0]);
+		const endDate = new Date(+values[1]);
+		//$('#left-graph').empty();
+		left_graph(data, startDate, endDate, $('#left-graph')[0]);
+	});
+});
 /*
 $(function() {
 	$('#range-slider').dateRangeSlider({
