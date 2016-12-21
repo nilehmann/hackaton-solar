@@ -1,4 +1,4 @@
-function plot(xs, ys, div) {
+function plott(xs, ys, div) {
 	let trace = {
 		x: xs,
 		y: ys
@@ -46,7 +46,7 @@ function bar(data, start_d_m_y, end_d_m_y, div) {
 	const dates = _.pluck(sortedByDate, 'date');
 	const gens = _.pluck(sortedByDate, 'gen');
 
-	plot(dates, gens, div);
+	plott(dates, gens, div);
 }
 
 function bar2(data, start_d_m_y, end_d_m_y, div) {
@@ -58,29 +58,25 @@ function bar2(data, start_d_m_y, end_d_m_y, div) {
 	const startDate = chileDate(start_d_m_y, '-');
 	const endDate = chileDate(end_d_m_y, '-');
 
-	const datesFiltered = _.filter(data, d => 
+	const datesFiltered = _.filter(data, d =>
 		date_in_range(d.date, startDate, endDate) && d.baja > 0);
 
 	const sortedByDate = _.sortBy(datesFiltered, d => d.date.getTime());
 
 	const dates = _.pluck(sortedByDate, 'date');
-	//const gens = new Array(dates.length).fill(0);
-	const gens = _.pluck(sortedByDate, 'baja');
+	const gens = new Array(dates.length).fill(0);
+	//const gens = _.pluck(sortedByDate, 'baja');
 	scatter(dates, gens, div);
 }
 
 function baz(start_d_m_y, end_d_m_y) {
 	const id = currentPlant.id;
-	Plotly.d3.csv(`generacion_por_dia/generacion_pordia_${id}.csv`, function(rows) {
-		// Plotly.d3.csv(`bajas/bajas_${id}.csv`, function(bajas) {
-        // print(rows, bajas)
-			bar(rows, start_d_m_y, end_d_m_y, $('#result')[0]);
-			// bar2(bajas, start_d_m_y, end_d_m_y, $('#result')[0]);
-/*
-			$('#result')[0].on('plotly_hover', function(data) {
-				const deAbajo = ._filter(data, d => d.curveNumber()
-			});*/
-		// });
+	  Plotly.d3.csv(`generacion_por_dia/generacion_pordia_${id}.csv`, function(err, rows) {
+		    Plotly.d3.csv(`bajas/bajas_${id}.csv`, function(err, bajas) {
+            bar(rows, start_d_m_y, end_d_m_y, $('#day-graph')[0]);
+            if (err == null)
+                bar2(bajas, start_d_m_y, end_d_m_y, $('#day-graph')[0]);
+		});
 	});
 }
 
